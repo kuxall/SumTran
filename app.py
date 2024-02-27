@@ -1,4 +1,5 @@
 import streamlit as st
+from gtts import gTTS
 from translator import translate
 from summarizer import summarize_text
 
@@ -6,12 +7,26 @@ from summarizer import summarize_text
 def main():
     st.sidebar.title("Choose an Option")
     option = st.sidebar.selectbox(
-        "Select the Purpose", ["Translator", "Summarize"])
+        "Select the Purpose", ["Text-to-Speech", "Translator", "Summarize"])
 
-    if option == "Translator":
+    if option == "Text-to-Speech":
+        st.title("Text-to-Speech App")
+        text_to_speak = st.text_input("Enter text to convert to speech:")
+        language = st.selectbox("Select language:", [
+                                "en", "ne", "fr", "es", "de"])
+
+        if st.button("Convert to Speech"):
+            try:
+                tts = gTTS(text=text_to_speak, lang=language)
+                tts.save("output.mp3")
+                st.success("Audio file generated successfully!")
+                st.audio("output.mp3")
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+    elif option == "Translator":
         st.title("Language Translator")
         dummy_text = st.text_area("Enter the text you want to translate")
-
         target_language = st.selectbox("Select Target Language", [
             "Nepali", "French", "Spanish", "German", "Chinese", "Japanese", "Korean", "Russian", "Italian", "Arabic",
             "Portuguese", "Dutch", "Swedish", "Danish", "Finnish", "Greek", "Hebrew", "Hindi", "Turkish"

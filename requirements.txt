@@ -2,3 +2,4 @@ transformers
 streamlit
 requests
 gTTS
+langdetect

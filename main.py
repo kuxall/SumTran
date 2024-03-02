@@ -2,16 +2,12 @@ import streamlit as st
 from text_to_speech.text_to_speech import text_to_speech_app
 from translator.translator import detect_language, translate
 from summarizer.summarizer import summarize_text
+from reader import read_txt, read_docx, read_pdf
 
 
 def handle_translation_error(error):
     """Handles errors during translation and displays informative messages."""
     st.error(f"An error occurred during translation: {error}")
-
-
-def handle_text_to_speech_error(error):
-    """Handles errors during text-to-speech conversion and displays informative messages."""
-    st.error(f"An error occurred while converting text to speech: {error}")
 
 
 def is_text_empty(text):
@@ -31,65 +27,85 @@ def main():
     elif option == "Translator":
         st.title("Language Translator")
 
-        dummy_text = st.text_area("Enter the text you want to translate:", "")
+        uploaded_file = st.file_uploader(
+            "Upload file (TXT, DOCX, PDF)", type=["txt", "docx", "pdf"])
 
-        if st.button("Detect Language"):
-            if dummy_text:
-                try:
-                    src_language = detect_language(dummy_text)
-                    if src_language != "unknown":
-                        st.success(f"Detected language: {src_language}")
-                    else:
-                        st.error("Language detection failed.")
-                except Exception as e:
-                    handle_translation_error(e)
+        if uploaded_file is not None:
+            file_contents = uploaded_file.getvalue()
 
-        target_language = st.selectbox("Select the target language:", [
-            "English", "Spanish", "French", "German", "Chinese (Simplified)", "Japanese", "Korean", "Russian", "Italian",
-            "Arabic", "Portuguese", "Dutch", "Swedish", "Danish", "Finnish", "Greek", "Hebrew", "Hindi", "Turkish", "Nepali"
-        ])
-
-        language_codes = {
-            "English": "en", "Spanish": "es", "French": "fr", "German": "de", "Chinese (Simplified)": "zh-CN",
-            "Japanese": "ja", "Korean": "ko", "Russian": "ru", "Italian": "it", "Arabic": "ar",
-            "Portuguese": "pt", "Dutch": "nl", "Swedish": "sv", "Danish": "da", "Finnish": "fi",
-            "Greek": "el", "Hebrew": "iw", "Hindi": "hi", "Turkish": "tr", "Nepali": "ne"
-        }
-
-        if st.button("Translate"):
-            if not is_text_empty(dummy_text):
-                trg_lang_code = language_codes.get(target_language)
-                try:
-                    src_language = detect_language(dummy_text)
-                    if src_language != "unknown":
-                        translated_text = translate(
-                            src_language, trg_lang_code, dummy_text)
-                        if translated_text:
-                            st.success("Translation successful:")
-                            st.write(translated_text)
-                        else:
-                            st.error("Translation failed.")
-                    else:
-                        st.error("Language detection failed.")
-                except Exception as e:
-                    handle_translation_error(e)
+            if uploaded_file.type == "text/plain":
+                dummy_text = read_txt(file_contents)
+            elif uploaded_file.type == "application/pdf":
+                dummy_text = read_pdf(file_contents)
+            elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                dummy_text = read_docx(file_contents)
             else:
-                st.warning("Please enter text to translate.")
+                st.error("Unsupported file format")
+
+            st.text_area("File Content", dummy_text)
+
+            if st.button("Translate"):
+                if not is_text_empty(dummy_text):
+                    target_language = st.selectbox("Select the target language:", [
+                        "English", "Spanish", "French", "German", "Chinese (Simplified)", "Japanese", "Korean", "Russian", "Italian",
+                        "Arabic", "Portuguese", "Dutch", "Swedish", "Danish", "Finnish", "Greek", "Hebrew", "Hindi", "Turkish", "Nepali"
+                    ])
+                    language_codes = {
+                        "English": "en", "Spanish": "es", "French": "fr", "German": "de", "Chinese (Simplified)": "zh-CN",
+                        "Japanese": "ja", "Korean": "ko", "Russian": "ru", "Italian": "it", "Arabic": "ar",
+                        "Portuguese": "pt", "Dutch": "nl", "Swedish": "sv", "Danish": "da", "Finnish": "fi",
+                        "Greek": "el", "Hebrew": "iw", "Hindi": "hi", "Turkish": "tr", "Nepali": "ne"
+                    }
+                    trg_lang_code = language_codes.get(target_language)
+
+                    try:
+                        src_language = detect_language(dummy_text)
+                        if src_language != "unknown":
+                            translated_text = translate(
+                                src_language, trg_lang_code, dummy_text)
+                            if translated_text:
+                                st.success("Translation successful:")
+                                st.write(translated_text)
+                            else:
+                                st.error("Translation failed.")
+                        else:
+                            st.error("Language detection failed.")
+                    except Exception as e:
+                        handle_translation_error(e)
+                else:
+                    st.warning("Please enter text to translate.")
 
     elif option == "Summarize":
         st.title("Text Summarizer")
-        text = st.text_area("Please input the text to summarize")
 
-        if st.button("Summarize"):
-            if not is_text_empty(text):
-                try:
-                    summary_text = summarize_text(text)
-                    st.subheader("Summary:")
-                    st.write(summary_text)
-                except Exception as e:
-                    st.error(f"An error occurred during summarization: {e}")
+        uploaded_file = st.file_uploader(
+            "Upload file (TXT, DOCX, PDF)", type=["txt", "docx", "pdf"])
+
+        if uploaded_file is not None:
+            file_contents = uploaded_file.getvalue()
+
+            if uploaded_file.type == "text/plain":
+                text_to_summarize = read_txt(file_contents)
+            elif uploaded_file.type == "application/pdf":
+                text_to_summarize = read_pdf(file_contents)
+            elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                text_to_summarize = read_docx(file_contents)
             else:
-                st.warning("Please enter some text to summarize.")
+                st.error("Unsupported file format")
+
+            st.text_area("File Content", text_to_summarize)
+
+            if st.button("Summarize"):
+                if not is_text_empty(text_to_summarize):
+                    try:
+                        summary_text = summarize_text(text_to_summarize)
+                        st.subheader("Summary:")
+                        st.write(summary_text)
+                    except Exception as e:
+                        st.error(
+                            f"An error occurred during summarization: {e}")
+                else:
+                    st.warning("Please enter some text to summarize.")
 
 
 if __name__ == "__main__":

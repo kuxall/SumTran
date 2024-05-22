@@ -60,7 +60,7 @@ def translate_text(src_text, src_lang, trg_lang):
 def main():
     st.sidebar.title("Choose an Option")
     option = st.sidebar.selectbox(
-        "Select the Purpose", ["Translator", "Summarize"]
+        "Select the Purpose", ["Translator", "Summarize", "Text-to-Speech"]
     )
 
     if option == "Translator":
@@ -116,6 +116,8 @@ def main():
                     st.error(f"An error occurred during summarization: {e}")
             else:
                 st.warning("Please enter some text to summarize.")
+    elif option == "Text-to-Speech":
+        text_to_speech_app()
 
 
 if __name__ == "__main__":
